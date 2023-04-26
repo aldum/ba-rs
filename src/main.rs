@@ -1,17 +1,36 @@
-use image::Luma;
-use qrcode::QrCode;
+use std::env;
+use std::io;
+
+use qrcodegen::QrCode;
+use qrcodegen::QrCodeEcc;
 
 fn main() {
-    // Encode some data into bits.
-    let code = QrCode::new(b"01234567").unwrap();
+    let args: Vec<String> = env::args().collect();
+    dbg!(args);
 
-    // let image = code.render::<Luma<u8>>().build();
-    // image.save("/tmp/qrcode.png").unwrap();
+    let stdin = read_stdin().unwrap();
 
-    let string = code
-        .render::<char>()
-        .quiet_zone(false)
-        .module_dimensions(2, 1)
-        .build();
-    println!("{}", string);
+    let data: &str = &stdin;
+    let errcorlvl: QrCodeEcc = QrCodeEcc::Low;
+
+    let qr = QrCode::encode_text(data, errcorlvl).unwrap();
+    print_qr(&qr);
+}
+
+fn read_stdin() -> io::Result<String> {
+    let mut buffer = String::new();
+    io::stdin().read_line(&mut buffer)?;
+    Ok(buffer)
+}
+
+fn print_qr(qr: &QrCode) {
+    let border: i32 = 4;
+    for y in -border..qr.size() + border {
+        for x in -border..qr.size() + border {
+            let c: char = if qr.get_module(x, y) { '█' } else { ' ' };
+            print!("{0}{0}", c);
+        }
+        println!();
+    }
+    println!();
 }
